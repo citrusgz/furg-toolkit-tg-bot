@@ -25,7 +25,7 @@ module.exports = async (ctx) => {
     // atribui a variavel horarios à lista formada por tdElements
     let horarios = tdElements
     horarios = horarios
-      .map(horario => horario.replace(/\*/g, '').replace(/ \(saída EQA\)/g, ''))
+      .map(horario => horario.replace(/\*|\(saída EQA\)|\-|\ /g, ''))
       .filter(horario => horario.trim() !== '')
       .sort();
       
@@ -105,8 +105,6 @@ module.exports = async (ctx) => {
     if (await isWeekend()) {
       caption = "Hoje não tem ônibus.";
     }
-
-    //caption += "\n\n ⚠️ Os horários podem sofrer alterações, confira a tabela antes de qualquer coisa! ⚠️", {parse_mode: 'MarkdownV2'};
 
     await ctx.replyWithPhoto({source: screenshot}, {caption: caption}); // Envia a captura de tela como uma imagem de resposta
     await ctx.deleteMessage(message.message_id); // Deleta a mensagem anterior
