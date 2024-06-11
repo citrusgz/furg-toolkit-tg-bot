@@ -1,14 +1,14 @@
 const { chromium } = require('playwright');
 
 async function scrapeWebsite() {
-  const browser = await chromium.launch(); // Inicializa o navegador Chromium
+  const browser = await chromium.launch({headless: true}); // Inicializa o navegador Chromium
   const context = await browser.newContext(); // Cria um novo contexto de navegação
   const page = await context.newPage(); // Cria uma nova página dentro do contexto
   await page.goto('https://www.furg.br/horarios-do-onibus-interno', {waitUntil: 'domcontentloaded'}); // Navega para a URL fornecida
   await page.waitForSelector('tbody'); // Aguarda a existência do seletor 'tbody' na página
   const tabelaElement = await page.$('tbody'); // Localiza o elemento 'tbody' na página
-  await page.waitForTimeout(1500); // Aguarda que os conteudos no cardapio sejam inicializados (se existirem)
-  const screenshot = await tabelaElement.screenshot({ fullPage: true }); // Tira uma captura de tela do elemento
+  await page.waitForTimeout(1500); // Aguarda que o conteúdo seja inicializado (se existirem)
+  const screenshot = await tabelaElement.screenshot(); // Tira uma captura de tela do elemento
   const tdElements = await page.$$eval('tbody td', tds => tds.map(td => td.textContent.trim())); // Procura em cada elemento td tabela (tbody) e os coloca em uma lista em forma de string
 
   await browser.close(); // Fecha o navegador
@@ -22,32 +22,25 @@ module.exports = async (ctx) => {
   try {
     const {screenshot, tdElements} = await scrapeWebsite(); // Executa o web scraping para obter a captura de tela da tabela
 
-    // atribui a variavel horarios à lista formada por tdElements
+    // Atribui a variável horarios à lista formada por tdElements
     let horarios = tdElements
-    horarios = horarios
       .map(horario => horario.replace(/\*|\(saída EQA\)|\-|\ /g, ''))
       .filter(horario => horario.trim() !== '')
       .sort();
-      
+
     // Função para verificar se é fim de semana
-    async function isWeekend() {
+    function isWeekend() {
       const today = new Date();
       const dayOfWeek = today.getDay(); // 0 (Sunday) to 6 (Saturday)
       return dayOfWeek === 0 || dayOfWeek === 6; // Sunday or Saturday
     }
 
     // Obter o horário atual
-    let horarioAtual = new Date();
-    let horaAtual = horarioAtual.getHours();
-    let minutoAtual = horarioAtual.getMinutes();
-
-    // Converter o horário atual para o formato da lista (HH:MM)
-    let horarioAtualFormatado = `${horaAtual}:${minutoAtual}`;
+    const currentTime = new Date();
+    const currentTimeFormatted = `${String(currentTime.getHours()).padStart(2, '0')}:${String(currentTime.getMinutes()).padStart(2, '0')}`;
 
     // Encontrar o próximo horário disponível
     let horarioProximo = null;
-
-    const currentTime = new Date();
 
     for (let horario of horarios) {
       const [horas, minutos] = horario.split(':');
@@ -65,22 +58,29 @@ module.exports = async (ctx) => {
       horarioProximo = horarios[0]; // Se não houver próximo na lista, volta ao primeiro horário do dia.
     }
 
-    // Função para calcular a diferença de tempo em minutos
+    // Função para calcular a diferença de tempo em minutos, considerando o dia seguinte se necessário
     function calculateTimeDifference(startTime, endTime) {
-      const start = new Date(`2000-01-01 ${startTime}`);
-      const end = new Date(`2000-01-01 ${endTime}`);
+      const [startHours, startMinutes] = startTime.split(':').map(Number);
+      const [endHours, endMinutes] = endTime.split(':').map(Number);
+      const start = new Date();
+      start.setHours(startHours, startMinutes, 0, 0);
+      const end = new Date();
+      end.setHours(endHours, endMinutes, 0, 0);
+
+      if (end <= start) {
+        // Se o horário de fim for anterior ou igual ao horário de início, adiciona um dia
+        end.setDate(end.getDate() + 1);
+      }
+
       const diff = end - start;
       return Math.floor(diff / 1000 / 60); // Convertendo para minutos
     }
 
     // Cálculo do tempo até o próximo ônibus
-    const tempoFalta = calculateTimeDifference(horarioAtualFormatado, horarioProximo);
-
+    let tempoFalta = calculateTimeDifference(currentTimeFormatted, horarioProximo);
     let tempoFaltaTexto;
-    if (tempoFalta < 0) {
-      horarioProximo = horarios[0];
-      tempoFalta = calculateTimeDifference(horarioAtualFormatado, horarioProximo);
-    } else if (tempoFalta < 60) {
+
+    if (tempoFalta < 60) {
       tempoFaltaTexto = tempoFalta === 1 ? '1 minuto' : `${tempoFalta} minutos`;
     } else {
       const horas = Math.floor(tempoFalta / 60);
@@ -100,9 +100,9 @@ module.exports = async (ctx) => {
       proximo = 'Não há mais horários hoje';
     }
 
-    let caption = `🚌 Próximo horário: ${horarioProximo}\nTempo até o próximo ônibus: ${tempoFaltaTexto}\n⚠️Mas tem outro ${proximo}`;
+    let caption = `🚌 Próximo horário: ${horarioProximo}\n⏰ Tempo até o próximo ônibus: ${tempoFaltaTexto}\n⚠️ Mas tem outro ${proximo}`;
 
-    if (await isWeekend()) {
+    if (isWeekend()) {
       caption = "Hoje não tem ônibus.";
     }
 
