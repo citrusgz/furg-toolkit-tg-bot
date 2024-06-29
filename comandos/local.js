@@ -130,8 +130,19 @@ const rl = readline.createInterface({
             // Aguardar até que todos os elementos .accordion-body sejam visíveis e estáveis
             const accordionBodyElements = await page.$$('.accordion-item:visible');
             if (accordionBodyElements.length >= 2) {
-              await accordionBodyElements[1].screenshot({path: 'accordion-body.png'});
+              await accordionBodyElements[1].screenshot({ path: 'accordion-body.png' });
               console.log('Tirou um print do conteúdo do segundo elemento .accordion-body.');
+
+              const tdElements = await accordionBodyElements[1].$$('td:not(.text-center.ng-star-inserted)');
+              const tdContents = await Promise.all(
+                tdElements.map(async (element) => {
+                  return (await element.textContent()).trim();
+                })
+              );
+              console.log('Conteúdo dos elementos td:');
+              tdContents.forEach((content) => {
+                console.log(content);
+              });
             } else {
               console.log('Erro ao tirar um print do conteúdo do segundo elemento .accordion-body.');
             }
