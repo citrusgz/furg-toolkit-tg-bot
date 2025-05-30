@@ -30,7 +30,7 @@ module.exports = async (ctx) => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     const dayOfWeek = tomorrow.getDay(); // 0 (Sunday) to 6 (Saturday)
-    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6; // Sunday or Saturday
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 5; // Sunday or Saturday
 
     if (isWeekend) {
       await ctx.replyWithPhoto({source: screenshot}, {caption: "Hoje não tem ônibus."}); // Envia a captura de tela como uma imagem de resposta

@@ -37,11 +37,11 @@ module.exports = async (ctx) => {
   const message = await ctx.reply('Por favor, aguarde breves momentos enquanto provemos a ti o distinto cardápio...');
 
   try {
-    const urlCC = 'https://www.furg.br/estudantes/cardapio-ru/restaurante-universitario-cc';
+    const urlCC = 'https://www.furg.br/?view=category&id=231';
     const resultCC = await scrapeWebsite(urlCC); // Executa o scraping para a primeira URL
     const captionCC = `[🔗RU CC](${urlCC})`;
 
-    const urlLago = 'https://www.furg.br/estudantes/cardapio-ru/restaurante-universitario-lago';
+    const urlLago = 'https://www.furg.br/?view=category&id=233';
     const resultLago = await scrapeWebsite(urlLago); // Executa o scraping para a segunda URL
     const captionLago = `[🔗RU LAGO](${urlLago})`;
 
