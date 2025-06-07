@@ -23,14 +23,15 @@ module.exports = async (ctx) => {
     const {screenshot, tdElements} = await scrapeWebsite(); // Executa o web scraping para obter a captura de tela da tabela
 
     let horarios = tdElements
-      .map(horario => horario.replace(/\*|\(saída EQA\)|\-|\ /g, ''))
+      .map(horario => horario.replace(/\(sa[íi]da ?da ?eqa\)|\*|\-|\ /gi, ''))
       .filter(horario => horario.trim() !== '')
       .sort();
-    
+
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     const dayOfWeek = tomorrow.getDay(); // 0 (Sunday) to 6 (Saturday)
-    const isWeekend = dayOfWeek === 0 || dayOfWeek === 5; // Sunday or Saturday
+    console.log(`Dia da semana para amanhã: ${dayOfWeek}`); // Log do dia da semana
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 7; // Sunday or Saturday
 
     if (isWeekend) {
       await ctx.replyWithPhoto({source: screenshot}, {caption: "Hoje não tem ônibus."}); // Envia a captura de tela como uma imagem de resposta
@@ -40,7 +41,6 @@ module.exports = async (ctx) => {
 
     // Obter o horário atual
     const currentTime = new Date();
-    const currentTimeFormatted = `${String(currentTime.getHours()).padStart(2, '0')}:${String(currentTime.getMinutes()).padStart(2, '0')}`;
 
     // Encontrar o próximo horário disponível
     let horarioProximo = horarios.find(horario => {
@@ -48,22 +48,30 @@ module.exports = async (ctx) => {
       const busTime = new Date(currentTime);
       busTime.setHours(Number(horas), Number(minutos), 0, 0);
       return busTime > currentTime;
-    }) || horarios[0]; // Se não houver próximo na lista, volta ao primeiro horário do dia.
+    });
 
     // Cálculo do tempo até o próximo ônibus
     let tempoFaltaTexto = 'Não há mais horários hoje';
     if (horarioProximo) {
-      let tempoFalta = ((new Date(currentTime).setHours(...horarioProximo.split(':')) - currentTime) / 1000 / 60) | 0; // Calcula a diferença em minutos
-      if (tempoFalta < 60) {
-        tempoFaltaTexto = tempoFalta === 1 ? '1 minuto' : `${tempoFalta} minutos`;
-      } else {
-        const horas = Math.floor(tempoFalta / 60);
-        const minutosRestantes = tempoFalta % 60;
-        tempoFaltaTexto = `${horas} hora(s)`;
-        if (minutosRestantes > 0) {
-          tempoFaltaTexto += ` e ${minutosRestantes} minuto(s)`;
+      const [horas, minutos] = horarioProximo.split(':');
+      const proximoHorarioDate = new Date(currentTime);
+      proximoHorarioDate.setHours(Number(horas), Number(minutos), 0, 0);
+      let tempoFalta = ((proximoHorarioDate - currentTime) / 1000 / 60) | 0; // Calcula a diferença em minutos
+      if (tempoFalta >= 0) {
+        if (tempoFalta < 60) {
+          tempoFaltaTexto = tempoFalta === 1 ? '1 minuto' : `${tempoFalta} minutos`;
+        } else {
+          const horasRestantes = Math.floor(tempoFalta / 60);
+          const minutosRestantes = tempoFalta % 60;
+          tempoFaltaTexto = `${horasRestantes} hora(s)`;
+          if (minutosRestantes > 0) {
+            tempoFaltaTexto += ` e ${minutosRestantes} minuto(s)`;
+          }
         }
       }
+    } else {
+      horarioProximo = 'Não há mais horários hoje';
+      tempoFaltaTexto = 'Hoje não';
     }
 
     let caption = `🚌 Próximo horário: ${horarioProximo}\n⏰ Tempo até o próximo ônibus: ${tempoFaltaTexto}`;
