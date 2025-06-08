@@ -27,20 +27,15 @@ module.exports = async (ctx) => {
       .filter(horario => horario.trim() !== '')
       .sort();
 
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const dayOfWeek = tomorrow.getDay(); // 0 (Sunday) to 6 (Saturday)
-    console.log(`Dia da semana para amanhã: ${dayOfWeek}`); // Log do dia da semana
-    const isWeekend = dayOfWeek === 0 || dayOfWeek === 7; // Sunday or Saturday
+    const currentTime = new Date();
+    const dayOfWeek = currentTime.getDay(); // 0 (Sunday) to 6 (Saturday)
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6; // Sunday or Saturday
 
     if (isWeekend) {
       await ctx.replyWithPhoto({source: screenshot}, {caption: "Hoje não tem ônibus."}); // Envia a captura de tela como uma imagem de resposta
       await ctx.deleteMessage(message.message_id); // Deleta a mensagem anterior
       return; // Encerra a execução se for fim de semana
     }
-
-    // Obter o horário atual
-    const currentTime = new Date();
 
     // Encontrar o próximo horário disponível
     let horarioProximo = horarios.find(horario => {
