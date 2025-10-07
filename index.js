@@ -25,7 +25,7 @@ bot.use(rateLimit(limitConfig));
 
 // Middleware para lidar com comandos não reconhecidos
 bot.use(async (ctx, next) => {
-  const validCommands = ['/start', '/help', '/micro', '/ru', '/error', '/news'];
+  const validCommands = ['/start', '/help', '/micro', '/ru', '/horarios', '/error', '/news'];
 
   if (ctx.message && ctx.message.text) {
     config.logInteraction(ctx);
@@ -70,6 +70,8 @@ bot.command('help', async (ctx) => {
     
   /ru - Mostra os cardápios dos RUs quando disponíveis. 🍲
   
+  /horarios - Mostra os horários de funcionamento dos RUs. 🕐
+  
   /micro - Mostra os horários do ônibus interno. 🚌
   
   /news - Mostra as notícias mais recentes da FURG. 📰
@@ -80,6 +82,7 @@ bot.command('help', async (ctx) => {
 
 // Registrar os comandos
 bot.command('ru', ru);
+bot.command('horarios', ru.horarios);
 bot.command('error', error);
 bot.command('news', news);
 bot.command('micro', micro);
