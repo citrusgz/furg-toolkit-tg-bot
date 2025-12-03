@@ -4,8 +4,6 @@
 To run this project you will need a `config.js` file like this one in the root of project:
 
 
-
-
 ```bash
 module.exports = {
   botToken: 'Your_bot_token',
@@ -23,6 +21,7 @@ module.exports = {
 };
 ```
 
+Remember to change botToken for your own bot token created using botFather (oficial Telegram bot, to create other bots) and if you want, add your Telegram ID in ownerID.
 
-After added the config file in the project. Make sure you have the NodeJS and npm packages installed. If it is ok, just run `npm install` and it is done!  🎉
+After configurate and added the config file in the project. Make sure you have the NodeJS and npm packages installed. If it is ok, just run `npm install` and it is done!  🎉
 # furg-toolkit-tg-bot
